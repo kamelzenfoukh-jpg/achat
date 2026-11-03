@@ -1,6 +1,6 @@
 window.CONFIG = {
-  SUPABASE_URL: "COLLE_ICI_TA_PROJECT_URL",
-  SUPABASE_ANON_KEY: "COLLE_ICI_TA_CLE_ANON",
+  SUPABASE_URL: "https://abhrvrqgqpjhgxzidqyb.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_kwxiG_dlNriROFYdH8lwfQ_ilTRk_JT",
 
   MAILS: false,
 
