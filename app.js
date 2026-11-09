@@ -1,5 +1,7 @@
 /* Plateforme achats — bêta */
 const C = window.CONFIG;
+document.title = C.TITRE || 'Achats';
+if (C.ICONE) { const ic = document.createElement('link'); ic.rel = 'icon'; ic.href = C.ICONE; document.head.appendChild(ic); }
 const sb = window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY);
 const NEED_PWD = /type=(invite|recovery)/.test(location.hash);
 
@@ -81,7 +83,7 @@ async function boot(user) {
 
 function renderLogin() {
   $('#app').innerHTML = `<div class="login"><form class="card" data-form="login">
-    <img src="logo.png" alt="${esc(C.NOM_SOCIETE)}" onerror="this.remove()">
+    <img src="${C.LOGO}" alt="${esc(C.NOM_SOCIETE)}" onerror="this.remove()">
     <div><h1>Connexion</h1><p class="mut" style="margin:0">Catalogue interne et demandes d'achat</p></div>
     <label>Email<input type="email" name="email" required autocomplete="username"></label>
     <label>Mot de passe<input type="password" name="password" required autocomplete="current-password"></label>
@@ -91,7 +93,7 @@ function renderLogin() {
 }
 function renderPwd() {
   $('#app').innerHTML = `<div class="login"><form class="card" data-form="pwd">
-    <img src="logo.png" alt="${esc(C.NOM_SOCIETE)}" onerror="this.remove()">
+    <img src="${C.LOGO}" alt="${esc(C.NOM_SOCIETE)}" onerror="this.remove()">
     <div><h1>Choisis ton mot de passe</h1><p class="mut" style="margin:0">8 caractères minimum.</p></div>
     <label>Mot de passe<input type="password" name="p1" required minlength="8" autocomplete="new-password"></label>
     <label>Confirmation<input type="password" name="p2" required minlength="8" autocomplete="new-password"></label>
@@ -112,7 +114,7 @@ function render() {
     return `<button class="nav ${S.screen === k ? 'on' : ''}" data-a="go" data-k="${k}">${LABEL[k]}${n ? `<span class="pill">${n}</span>` : ''}</button>`;
   }).join('');
   $('#app').innerHTML = `<header class="top">
-      <div class="brand"><span class="mark" aria-hidden="true">A</span><b>Achats</b><img src="logo-blanc.png" alt="${esc(C.NOM_SOCIETE)}" class="hlogo" onerror="this.remove()"></div>
+      <div class="brand"><img src="${C.LOGO_BLANC}" alt="${esc(C.NOM_SOCIETE)}" style="height:34px;display:block"></div>
       <nav aria-label="Navigation">${nav}</nav>
       <div class="who">${esc(S.me.nom)} <span>· ${ROLE[S.me.role]}</span><button class="link light" data-a="logout">Déconnexion</button></div>
     </header><main class="wrap">${VIEWS[S.screen]()}</main>`;
@@ -305,7 +307,7 @@ function openDoc(id) {
   $('#modal').innerHTML = `<div class="mbox" role="dialog" aria-modal="true" aria-label="Demande d'achat">
     <div class="mbar"><b>Demande d'achat ${esc(daNum(d.id))}</b><div style="display:flex;gap:8px"><button class="btn primary" data-a="print">Télécharger en PDF</button><button class="btn" data-a="close">Fermer</button></div></div>
     <div class="mbody"><div class="da">
-      <div class="t"><div class="t1"><span>DEMANDE D'ACHAT</span><span>DA N° : ${esc(daNum(d.id))}</span></div><div class="t2"><img src="logo.png" alt="${esc(C.NOM_SOCIETE)}" onerror="this.remove()"></div></div>
+      <div class="t"><div class="t1"><span>DEMANDE D'ACHAT</span><span>DA N° : ${esc(daNum(d.id))}</span></div><div class="t2"><img src="${C.LOGO}" alt="${esc(C.NOM_SOCIETE)}" onerror="this.remove()"></div></div>
       <div class="band">GÉNÉRALITÉS :</div>
       <div class="gen"><div><b>Demandeur : </b>${esc(nomDe(d.demandeur_id))}</div><div><b>Fournisseur : </b>${esc(fournDe(d.fournisseur_id))}</div><div><b>Date : </b>${dfr(d.created_at)}</div>
         <div><b>Agence : </b>${esc(d.agence)}</div><div style="grid-column:span 2"><b>Statut : </b>${STATUT[d.statut][0]}</div></div>
