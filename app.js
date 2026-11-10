@@ -174,7 +174,7 @@ const VIEWS = {
     if (!S.demandes.length) return `<h1>Demandes d'achat</h1><div class="card empty"><p>Aucune demande pour l’instant.</p></div>`;
     return `<h1>Demandes d'achat</h1><div class="card tw"><table class="tbl" style="min-width:920px">
       <thead><tr><th>N°</th><th>Date</th><th>Demandeur</th><th>Agence</th><th>Fournisseur</th><th>Montant HT</th><th>Statut</th><th>DA</th></tr></thead><tbody>
-      ${S.demandes.map((d) => `<tr><td class="mono nw">${esc(daNum(d.id))}</td><td class="nw">${dfr(d.created_at)}</td><td>${esc(nomDe(d.demandeur_id))}</td><td>${esc(d.agence)}</td><td>${esc(fournD(d))}</td><td class="nw"><b>${eur(totalDA(d))}</b></td><td><span class="badge ${STATUT[d.statut][1]}">${STATUT[d.statut][0]}</span></td><td><button class="btn" data-a="doc" data-k="${d.id}">Voir</button></td></tr>`).join('')}
+      ${S.demandes.map((d) => `<tr><td class="mono nw">${esc(daNum(d.id))}</td><td class="nw">${dfr(d.created_at)}</td><td>${esc(nomDe(d.demandeur_id))}</td><td>${esc(d.agence)}</td><td>${esc(fournD(d))}</td><td class="nw"><b>${eur(totalDA(d))}</b></td><td><span class="badge ${STATUT[d.statut][1]}">${STATUT[d.statut][0]}</span></td><td class="nw"><button class="btn" data-a="doc" data-k="${d.id}">Voir</button>${S.me.role === 'admin' ? `<button class="link" style="color:#B42318;margin-left:6px" data-a="delDA" data-k="${d.id}">Supprimer</button>` : ''}</td></tr>`).join('')}
       </tbody></table></div>`;
   },
 
@@ -424,6 +424,13 @@ const ACTIONS = {
     const { error } = await sb.rpc('marquer_everwin', { p_id: Number(k) });
     if (error) throw error;
     await loadAll(); render(); toast('Marquée comme saisie sur Everwin.');
+  },
+  delDA: async (k) => {
+    if (!confirm('Supprimer définitivement la demande ' + daNum(k) + ' ? Cette action est irréversible.')) return;
+    const { error, count } = await sb.from('demandes').delete({ count: 'exact' }).eq('id', Number(k));
+    if (error) throw error;
+    if (!count) throw new Error('Suppression refusée.');
+    closeDoc(); await loadAll(); render(); toast('Demande ' + daNum(k) + ' supprimée.');
   },
   delProduit: async (k) => {
     const p = S.produits.find((x) => String(x.id) === k);
