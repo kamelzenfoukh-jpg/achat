@@ -329,10 +329,8 @@ const ADMIN = {
       <label>Photo${p && p.photo_url ? ' (laisser vide pour garder l’actuelle)' : ''}<input name="photo" type="file" accept="image/*"></label>
       <button class="btn primary" type="submit">${p ? 'Enregistrer' : 'Ajouter au catalogue'}</button>
       ${p ? '<button class="link" type="button" data-a="cancel">Annuler</button>' : ''}
-    </form><div class="card grow tw" style="max-height:760px"><table class="tbl" style="min-width:760px"><thead><tr><th><span class="sr">Photo</span></th><th>Désignation</th><th>Catégorie</th><th>Fournisseur</th><th>Prix HT</th><th>Tailles</th><th><span class="sr">Actions</span></th></tr></thead><tbody>
-      ${S.produits.map((x) => `<tr style="${x.actif ? '' : 'opacity:.5'}"><td>${x.photo_url ? `<img class="thumb" src="${esc(x.photo_url)}" alt="">` : ''}</td><td><b>${esc(x.nom)}</b><br><span class="ref">${esc(x.ref || '')}</span></td><td>${esc(x.categorie)}</td><td>${esc(fournDe(x.fournisseur_id))}</td><td class="nw">${eur(x.prix)}</td><td>${x.tailles ? esc(x.tailles.join(', ')) : '—'}</td>
-        <td class="nw"><button class="link" data-a="edit" data-k="${x.id}">Modifier</button><button class="link" data-a="actif" data-k="${x.id}">${x.actif ? 'Désactiver' : 'Réactiver'}</button><button class="link" style="color:#B42318" data-a="delProduit" data-k="${x.id}">Supprimer</button></td></tr>`).join('')}
-    </tbody></table></div></div>`;
+    </form><div class="grow stack"><input type="search" id="qa" placeholder="Rechercher un produit, une référence, un fournisseur…" value="${esc(S.adminSearch || '')}" aria-label="Rechercher un produit">
+      <div class="card tw" style="max-height:760px"><table class="tbl" style="min-width:760px"><thead><tr><th><span class="sr">Photo</span></th><th>Désignation</th><th>Catégorie</th><th>Fournisseur</th><th>Prix HT</th><th>Tailles</th><th><span class="sr">Actions</span></th></tr></thead><tbody id="admin-prod">${lignesProduitsAdmin()}</tbody></table></div></div></div>`;
   },
 
   fournisseurs() {
@@ -349,6 +347,12 @@ const ADMIN = {
     </tbody></table></div></div>`;
   }
 };
+
+function lignesProduitsAdmin() {
+  const r = S.produits.filter((x) => { const q = (S.adminSearch || '').trim().toLowerCase(); return !q || (x.nom + ' ' + (x.ref || '') + ' ' + fournDe(x.fournisseur_id) + ' ' + x.categorie).toLowerCase().includes(q); }).map((x) => `<tr style="${x.actif ? '' : 'opacity:.5'}"><td>${x.photo_url ? `<img class="thumb" src="${esc(x.photo_url)}" alt="">` : ''}</td><td><b>${esc(x.nom)}</b><br><span class="ref">${esc(x.ref || '')}</span></td><td>${esc(x.categorie)}</td><td>${esc(fournDe(x.fournisseur_id))}</td><td class="nw">${eur(x.prix)}</td><td>${x.tailles ? esc(x.tailles.join(', ')) : '—'}</td>
+        <td class="nw"><button class="link" data-a="edit" data-k="${x.id}">Modifier</button><button class="link" data-a="actif" data-k="${x.id}">${x.actif ? 'Désactiver' : 'Réactiver'}</button><button class="link" style="color:#B42318" data-a="delProduit" data-k="${x.id}">Supprimer</button></td></tr>`).join('');
+  return r || '<tr><td colspan="7" class="mut">Aucun produit trouvé.</td></tr>';
+}
 
 /* ---------- aperçu DA ---------- */
 function openDoc(id) {
@@ -582,6 +586,7 @@ function majPrestation(e) {
 document.addEventListener('change', majPrestation);
 document.addEventListener('input', majPrestation);
 document.addEventListener('input', (e) => {
+  if (e.target.id === 'qa') { S.adminSearch = e.target.value; $('#admin-prod').innerHTML = lignesProduitsAdmin(); return; }
   if (e.target.id === 'q') {
     S.search = e.target.value;
     if (S.screen !== 'catalogue') {
