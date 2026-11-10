@@ -5,7 +5,7 @@ if (C.ICONE) { const ic = document.createElement('link'); ic.rel = 'icon'; ic.hr
 const sb = window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY);
 const NEED_PWD = /type=(invite|recovery)/.test(location.hash);
 
-const S = { me: null, profils: [], fourn: [], produits: [], demandes: [], screen: null, cat: 'Tout', search: '', tailles: {}, adminTab: 'users', edit: null };
+const S = { me: null, profils: [], agences: [], fourn: [], produits: [], demandes: [], screen: null, cat: 'Tout', search: '', tailles: {}, adminTab: 'users', edit: null };
 let cart = {};
 try { cart = JSON.parse(localStorage.getItem('panier') || '{}'); } catch (e) { cart = {}; }
 const saveCart = () => { try { localStorage.setItem('panier', JSON.stringify(cart)); } catch (e) {} };
@@ -54,10 +54,14 @@ async function loadAll() {
   const r = await Promise.all([
     sb.from('profiles').select('*').order('nom'),
     sb.from('fournisseurs').select('*').order('nom'),
+    sb.from('agences').select('nom').order('nom'),
     sb.from('produits').select('*').order('nom'),
     sb.from('demandes').select('*, lignes(*)').order('id', { ascending: false })
   ]);
   r.forEach((x) => { if (x.error) throw x.error; });
+  r.forEach((x) => { if (x.error) throw x.error; });
+  S.agences = r[2].data.map((a) => a.nom);
+  r.splice(2, 1);
   [S.profils, S.fourn, S.produits, S.demandes] = r.map((x) => x.data);
   S.me = S.profils.find((p) => p.id === S.me.id) || S.me;
 }
@@ -158,7 +162,7 @@ const VIEWS = {
       <form class="card side2 stack" data-form="envoyer"><h2>Récapitulatif</h2>
         <div class="row"><span class="mut">Demandes d'achat</span><b>${Object.keys(groups).length}</b></div>
         <div class="row big"><span>Total HT</span><b>${eur(total)}</b></div>
-        <label>Agence<select name="agence">${opts(C.AGENCES, S.me.agence)}</select></label>
+        <label>Agence<select name="agence">${opts(S.agences, S.me.agence)}</select></label>
         <label>Commentaire<textarea name="commentaire" rows="3" placeholder="Ex. réassort chantier, dotation EPI…"></textarea></label>
         <div class="row"><span class="mut">Valideur</span><b>${esc(n1)}</b></div>
         <button class="btn primary" type="submit">Envoyer pour validation</button>
@@ -218,7 +222,7 @@ const VIEWS = {
 
   prestation() {
     const four = S.fourn.map((f) => `<option value="${esc(f.nom)}">`).join('');
-    const lieux = C.AGENCES.map((a) => `<option value="${esc(a)}">`).join('');
+    const lieux = S.agences.map((a) => `<option value="${esc(a)}">`).join('');
     const dest = S.me.n1_id ? 'Elle sera envoyée à ' + esc(nomDe(S.me.n1_id)) + ' pour validation.' : 'Elle sera transmise directement au responsable achats.';
     return `<div><h1>Demande d'achat</h1><p class="mut" style="margin:0">Pour une prestation ou un achat hors catalogue. ${dest}</p></div>
     <form class="card pad stack" data-form="prestation" style="max-width:860px">
@@ -253,7 +257,7 @@ const VIEWS = {
   },
 
   admin() {
-    const tabs = [['users', 'Utilisateurs'], ['produits', 'Produits'], ['fournisseurs', 'Fournisseurs']]
+    const tabs = [['users', 'Utilisateurs'], ['produits', 'Produits'], ['fournisseurs', 'Fournisseurs'], ['agences', 'Agences']]
       .map(([k, l]) => `<button class="tab ${S.adminTab === k ? 'on' : ''}" role="tab" aria-selected="${S.adminTab === k}" data-a="tab" data-k="${k}">${l}</button>`).join('');
     return `<h1>Administration</h1><div class="tabs" role="tablist">${tabs}</div>${ADMIN[S.adminTab]()}`;
   }
@@ -279,6 +283,16 @@ function gridHtml() {
 
 /* ---------- administration ---------- */
 const ADMIN = {
+  agences() {
+    return `<div class="cols"><form class="card side2 stack" data-form="agence">
+      <h2>Ajouter une agence</h2>
+      <label>Nom de l'agence<input name="nom" required></label>
+      <button class="btn primary" type="submit">Ajouter l'agence</button>
+    </form><div class="card grow tw"><table class="tbl" style="min-width:420px"><thead><tr><th>Agence</th><th>Utilisateurs</th><th><span class="sr">Action</span></th></tr></thead><tbody>
+      ${S.agences.map((a) => `<tr><td><b>${esc(a)}</b></td><td>${S.profils.filter((p) => p.agence === a).length}</td><td><button class="link" data-a="delAgence" data-k="${esc(a)}">Supprimer</button></td></tr>`).join('')}
+    </tbody></table></div></div>`;
+  },
+
   users() {
     const u = S.edit ? S.profils.find((p) => p.id === S.edit) : null;
     const valideurs = S.profils.filter((p) => p.role !== 'technicien').map((p) => [p.id, p.nom]);
@@ -288,7 +302,7 @@ const ADMIN = {
       <label>Email<input name="email" type="email" ${u ? 'disabled' : 'required'} value="${esc(u && u.email)}" placeholder="prenom.nom@societe.fr"></label>
       ${!u && !C.MAILS ? '<label>Mot de passe provisoire (à donner à la personne)<input name="password" required minlength="8" placeholder="8 caractères minimum"></label>' : ''}
       <label>Rôle<select name="role">${opts([['technicien', 'Technicien (demandeur)'], ['n1', 'N+1 (valideur)'], ['assistance', 'Assistance technique'], ['admin', 'Admin / resp. logistique']], u ? u.role : 'technicien')}</select></label>
-      <label>Agence<select name="agence">${opts(C.AGENCES, u && u.agence)}</select></label>
+      <label>Agence<select name="agence">${opts(S.agences, u && u.agence)}</select></label>
       <label>N+1 qui valide ses demandes<select name="n1_id"><option value="">— Aucun —</option>${opts(valideurs, u && u.n1_id)}</select></label>
       <button class="btn primary" type="submit">${u ? 'Enregistrer' : (C.MAILS ? 'Créer le compte et envoyer l’invitation' : 'Créer le compte')}</button>
       ${u ? '<button class="link" type="button" data-a="cancel">Annuler</button>' : ''}
@@ -376,6 +390,12 @@ const ACTIONS = {
   go: (k) => { S.screen = k; S.edit = null; render(); window.scrollTo(0, 0); },
   cat: (k) => { S.cat = k; render(); },
   qty: (k, d) => { const n = (cart[k] || 0) + Number(d); if (n > 0) cart[k] = n; else delete cart[k]; saveCart(); render(); },
+  delAgence: async (k) => {
+    if (!confirm('Supprimer l’agence ' + k + ' ? Les demandes et comptes existants ne sont pas modifiés.')) return;
+    const { error } = await sb.from('agences').delete().eq('nom', k);
+    if (error) throw error;
+    await loadAll(); render(); toast('Agence supprimée.');
+  },
   tab: (k) => { S.adminTab = k; S.edit = null; render(); },
   edit: (k) => { S.edit = k; render(); window.scrollTo(0, 0); },
   cancel: () => { S.edit = null; render(); },
@@ -479,6 +499,13 @@ const FORMS = {
     notifier({ type: 'soumise', ids: [id] });
     await loadAll(); S.screen = 'demandes'; render();
     toast('Demande ' + daNum(id) + (S.me.n1_id ? ' envoyée à ton N+1.' : ' transmise au responsable achats.'));
+  },
+  async agence(fd) {
+    const nom = fd.get('nom').trim();
+    if (S.agences.some((a) => a.toLowerCase() === nom.toLowerCase())) throw new Error('Cette agence existe déjà.');
+    const { error } = await sb.from('agences').insert({ nom });
+    if (error) throw error;
+    await loadAll(); render(); toast('Agence ' + nom + ' ajoutée.');
   },
   async fournisseur(fd) {
     const row = { nom: fd.get('nom').trim(), email: fd.get('email').trim() || null, tel: fd.get('tel').trim() || null };
