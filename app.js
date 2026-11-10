@@ -331,7 +331,7 @@ const ADMIN = {
       ${p ? '<button class="link" type="button" data-a="cancel">Annuler</button>' : ''}
     </form><div class="card grow tw" style="max-height:760px"><table class="tbl" style="min-width:760px"><thead><tr><th><span class="sr">Photo</span></th><th>Désignation</th><th>Catégorie</th><th>Fournisseur</th><th>Prix HT</th><th>Tailles</th><th><span class="sr">Actions</span></th></tr></thead><tbody>
       ${S.produits.map((x) => `<tr style="${x.actif ? '' : 'opacity:.5'}"><td>${x.photo_url ? `<img class="thumb" src="${esc(x.photo_url)}" alt="">` : ''}</td><td><b>${esc(x.nom)}</b><br><span class="ref">${esc(x.ref || '')}</span></td><td>${esc(x.categorie)}</td><td>${esc(fournDe(x.fournisseur_id))}</td><td class="nw">${eur(x.prix)}</td><td>${x.tailles ? esc(x.tailles.join(', ')) : '—'}</td>
-        <td class="nw"><button class="link" data-a="edit" data-k="${x.id}">Modifier</button><button class="link" data-a="actif" data-k="${x.id}">${x.actif ? 'Désactiver' : 'Réactiver'}</button></td></tr>`).join('')}
+        <td class="nw"><button class="link" data-a="edit" data-k="${x.id}">Modifier</button><button class="link" data-a="actif" data-k="${x.id}">${x.actif ? 'Désactiver' : 'Réactiver'}</button><button class="link" style="color:#B42318" data-a="delProduit" data-k="${x.id}">Supprimer</button></td></tr>`).join('')}
     </tbody></table></div></div>`;
   },
 
@@ -424,6 +424,15 @@ const ACTIONS = {
     const { error } = await sb.rpc('marquer_everwin', { p_id: Number(k) });
     if (error) throw error;
     await loadAll(); render(); toast('Marquée comme saisie sur Everwin.');
+  },
+  delProduit: async (k) => {
+    const p = S.produits.find((x) => String(x.id) === k);
+    if (!p || !confirm('Supprimer définitivement « ' + p.nom + ' » ?\nLes demandes d’achat déjà faites ne sont pas modifiées.')) return;
+    const { error } = await sb.from('produits').delete().eq('id', p.id);
+    if (error) throw error;
+    Object.keys(cart).forEach((c) => { if (c.split('|')[0] === String(p.id)) delete cart[c]; }); saveCart();
+    if (S.edit === k) S.edit = null;
+    await loadAll(); render(); toast('Produit supprimé.');
   },
   actif: async (k) => {
     const p = S.produits.find((x) => String(x.id) === k);
