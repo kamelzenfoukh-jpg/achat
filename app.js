@@ -27,7 +27,7 @@ const eur = (n) => Number(n).toLocaleString('fr-FR', { minimumFractionDigits: 2,
 const dfr = (d) => (d ? new Date(d).toLocaleDateString('fr-FR') : '');
 const daNum = (id) => C.DA_PREFIX + id;
 const nomDe = (id) => (S.profils.find((p) => p.id === id) || {}).nom || '—';
-const fournD = (d) => d.fournisseur_nom || fournDe(d.fournisseur_id);
+const fournD = (d) => (d.fournisseur_id && S.fourn.some((f) => f.id === d.fournisseur_id)) ? fournDe(d.fournisseur_id) : (d.fournisseur_nom || '—');
 const fournDe = (id) => (S.fourn.find((f) => f.id === id) || {}).nom || '—';
 const prodDe = (id) => S.produits.find((p) => p.id === id);
 const totalDA = (d) => d.lignes.reduce((t, l) => t + l.qte * Number(l.pu), 0);
