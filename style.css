@@ -75,10 +75,10 @@ label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500}
 .login img{width:200px;align-self:center}
 #modal{position:fixed;inset:0;background:rgba(27,31,29,.55);display:none;align-items:flex-start;justify-content:center;padding:32px 16px;overflow-y:auto;z-index:50}
 #modal.show{display:flex}
-.mbox{width:100%;max-width:900px;background:#fff;border-radius:8px;overflow:hidden}
+.mbox{width:100%;max-width:1100px;background:#fff;border-radius:8px;overflow:hidden}
 .mbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;background:#EFEFEA;border-bottom:1px solid var(--line)}
 .mbody{padding:24px;overflow-x:auto}
-.da{min-width:680px;border:2px solid #222;color:#111;background:#fff;font-family:Calibri,'IBM Plex Sans',Arial,sans-serif}
+.da{min-width:960px;border:2px solid #222;color:#111;background:#fff;font-family:Calibri,'IBM Plex Sans',Arial,sans-serif}
 .da .t{display:flex;border-bottom:2px solid #222}
 .da .t1{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px;color:#1F3A8A;font-weight:700}
 .da .t1 span:first-child{font-size:26px;text-decoration:underline}.da .t1 span:last-child{font-size:20px}
@@ -87,7 +87,7 @@ label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500}
 .da .gen{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:2px solid #222;font-size:14px}
 .da .gen div{padding:10px;border-right:1px solid #333;border-top:1px solid #333}.da .gen div:nth-child(-n+3){border-top:none}.da .gen div:nth-child(3n){border-right:none}
 .da table{width:100%;border-collapse:collapse}
-.da th{background:#E4E4E4;border:1px solid #333;font-size:13px;padding:8px}
+.da th{background:#E4E4E4;border:1px solid #333;font-size:12px;padding:6px}
 .da td{border:1px solid #333;font-size:13px;padding:8px 10px}
 .da .r{text-align:right;white-space:nowrap}.da .g{background:#EFEFEF}.da .c{text-align:center}
 .da .foot{display:flex;border-top:2px solid #222;min-height:130px}

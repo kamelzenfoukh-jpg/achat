@@ -13,11 +13,12 @@ const saveCart = () => { try { localStorage.setItem('panier', JSON.stringify(car
 const NAV = {
   technicien: ['catalogue', 'panier', 'demandes'],
   n1: ['validation', 'demandes', 'catalogue', 'panier'],
-  admin: ['traiter', 'demandes', 'stats', 'catalogue', 'panier', 'admin']
+  assistance: ['prestation', 'catalogue', 'panier', 'demandes'],
+  admin: ['traiter', 'demandes', 'stats', 'catalogue', 'panier', 'prestation', 'admin']
 };
-const LABEL = { catalogue: 'Catalogue', panier: 'Panier', demandes: 'Demandes', validation: 'À valider', traiter: 'À saisir Everwin', stats: 'Stats fournisseurs', admin: 'Administration' };
+const LABEL = { catalogue: 'Catalogue', panier: 'Panier', prestation: 'Demande d’achat', demandes: 'Demandes', validation: 'À valider', traiter: 'À saisir Everwin', stats: 'Stats fournisseurs', admin: 'Administration' };
 const STATUT = { attente: ['En attente N+1', 'b-wait'], validee: ['Validée · à saisir Everwin', 'b-ok'], everwin: ['BC saisi Everwin', 'b-done'], refusee: ['Refusée', 'b-ko'] };
-const ROLE = { technicien: 'Technicien', n1: 'N+1', admin: 'Admin' };
+const ROLE = { technicien: 'Technicien', n1: 'N+1', admin: 'Admin', assistance: 'Assistance technique' };
 
 /* ---------- utilitaires ---------- */
 const $ = (s) => document.querySelector(s);
@@ -26,6 +27,7 @@ const eur = (n) => Number(n).toLocaleString('fr-FR', { minimumFractionDigits: 2,
 const dfr = (d) => (d ? new Date(d).toLocaleDateString('fr-FR') : '');
 const daNum = (id) => C.DA_PREFIX + id;
 const nomDe = (id) => (S.profils.find((p) => p.id === id) || {}).nom || '—';
+const fournD = (d) => d.fournisseur_nom || fournDe(d.fournisseur_id);
 const fournDe = (id) => (S.fourn.find((f) => f.id === id) || {}).nom || '—';
 const prodDe = (id) => S.produits.find((p) => p.id === id);
 const totalDA = (d) => d.lignes.reduce((t, l) => t + l.qte * Number(l.pu), 0);
@@ -167,7 +169,7 @@ const VIEWS = {
     if (!S.demandes.length) return `<h1>Demandes d'achat</h1><div class="card empty"><p>Aucune demande pour l’instant.</p></div>`;
     return `<h1>Demandes d'achat</h1><div class="card tw"><table class="tbl" style="min-width:920px">
       <thead><tr><th>N°</th><th>Date</th><th>Demandeur</th><th>Agence</th><th>Fournisseur</th><th>Montant HT</th><th>Statut</th><th>DA</th></tr></thead><tbody>
-      ${S.demandes.map((d) => `<tr><td class="mono nw">${esc(daNum(d.id))}</td><td class="nw">${dfr(d.created_at)}</td><td>${esc(nomDe(d.demandeur_id))}</td><td>${esc(d.agence)}</td><td>${esc(fournDe(d.fournisseur_id))}</td><td class="nw"><b>${eur(totalDA(d))}</b></td><td><span class="badge ${STATUT[d.statut][1]}">${STATUT[d.statut][0]}</span></td><td><button class="btn" data-a="doc" data-k="${d.id}">Voir</button></td></tr>`).join('')}
+      ${S.demandes.map((d) => `<tr><td class="mono nw">${esc(daNum(d.id))}</td><td class="nw">${dfr(d.created_at)}</td><td>${esc(nomDe(d.demandeur_id))}</td><td>${esc(d.agence)}</td><td>${esc(fournD(d))}</td><td class="nw"><b>${eur(totalDA(d))}</b></td><td><span class="badge ${STATUT[d.statut][1]}">${STATUT[d.statut][0]}</span></td><td><button class="btn" data-a="doc" data-k="${d.id}">Voir</button></td></tr>`).join('')}
       </tbody></table></div>`;
   },
 
@@ -176,7 +178,7 @@ const VIEWS = {
     const head = `<div><h1>Demandes à valider</h1><p class="mut" style="margin:0">Une fois validée, la demande part chez le responsable achats pour saisie du bon de commande sur Everwin.</p></div>`;
     if (!list.length) return head + `<div class="card empty"><p>Rien à valider pour le moment.</p></div>`;
     return head + list.map((d) => `<section class="card">
-      <div class="gh"><div><span class="mono mut">${esc(daNum(d.id))} · ${dfr(d.created_at)}</span><b style="font-size:17px">${esc(fournDe(d.fournisseur_id))}</b><span class="mut">Demandé par ${esc(nomDe(d.demandeur_id))} · Agence ${esc(d.agence)}${d.commentaire ? ' · ' + esc(d.commentaire) : ''}</span></div><b style="font-size:20px">${eur(totalDA(d))}</b></div>
+      <div class="gh"><div><span class="mono mut">${esc(daNum(d.id))} · ${dfr(d.created_at)}</span><b style="font-size:17px">${esc(fournD(d))}</b><span class="mut">Demandé par ${esc(nomDe(d.demandeur_id))} · Agence ${esc(d.agence)}${d.commentaire ? ' · ' + esc(d.commentaire) : ''}</span></div><b style="font-size:20px">${eur(totalDA(d))}</b></div>
       <div class="tw"><table class="tbl" style="min-width:480px"><thead><tr><th>Désignation</th><th>Qté</th><th>PU HT</th><th>Total HT</th></tr></thead><tbody>
       ${d.lignes.map((l) => `<tr><td>${esc(l.designation)}</td><td>${l.qte}</td><td class="nw">${eur(l.pu)}</td><td class="nw"><b>${eur(l.qte * l.pu)}</b></td></tr>`).join('')}</tbody></table></div>
       <div class="acts"><button class="btn" style="margin-right:auto" data-a="doc" data-k="${d.id}">Voir la DA</button><button class="btn ko" data-a="decide" data-k="${d.id}" data-d="0">Refuser</button><button class="btn ok" data-a="decide" data-k="${d.id}" data-d="1">Valider</button></div>
@@ -188,7 +190,7 @@ const VIEWS = {
     const head = `<div><h1>DA validées à saisir sur Everwin</h1><p class="mut" style="margin:0">Ouvre la DA, saisis le bon de commande sur Everwin, puis marque-la comme saisie.</p></div>`;
     if (!list.length) return head + `<div class="card empty"><p>Tout est saisi.</p></div>`;
     return head + list.map((d) => `<section class="card pad" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px">
-      <div style="display:flex;flex-direction:column;gap:4px"><span class="mono mut">${esc(daNum(d.id))} · ${dfr(d.created_at)}</span><b style="font-size:17px">${esc(fournDe(d.fournisseur_id))} · ${eur(totalDA(d))} HT</b><span class="mut">${esc(nomDe(d.demandeur_id))} · Agence ${esc(d.agence)} · validée par ${esc(nomDe(d.n1_id))} le ${dfr(d.valide_le)}</span></div>
+      <div style="display:flex;flex-direction:column;gap:4px"><span class="mono mut">${esc(daNum(d.id))} · ${dfr(d.created_at)}</span><b style="font-size:17px">${esc(fournD(d))} · ${eur(totalDA(d))} HT</b><span class="mut">${esc(nomDe(d.demandeur_id))} · Agence ${esc(d.agence)} · ${d.n1_id ? 'validée par ' + esc(nomDe(d.n1_id)) + ' le ' + dfr(d.valide_le) : 'transmise directement le ' + dfr(d.valide_le)}</span></div>
       <div style="display:flex;flex-wrap:wrap;gap:10px"><button class="btn" data-a="doc" data-k="${d.id}">Voir la DA</button><button class="btn primary" data-a="everwin" data-k="${d.id}">BC saisi sur Everwin</button></div>
     </section>`).join('');
   },
@@ -212,6 +214,42 @@ const VIEWS = {
     return `<div><h1>Fournisseurs</h1><p class="mut" style="margin:0">Calculé sur les demandes validées et en attente (hors refusées).</p></div>
       <div class="kpis"><div class="card kpi"><span class="mut">Montant total commandé</span><b>${eur(tot)}</b></div><div class="card kpi"><span class="mut">Demandes d'achat</span><b>${act.length}</b></div><div class="card kpi"><span class="mut">Montant moyen par demande</span><b>${act.length ? eur(tot / act.length) : '—'}</b></div></div>
       <div class="fgrid">${cards}</div>`;
+  },
+
+  prestation() {
+    const four = S.fourn.map((f) => `<option value="${esc(f.nom)}">`).join('');
+    const lieux = C.AGENCES.map((a) => `<option value="${esc(a)}">`).join('');
+    const dest = S.me.n1_id ? 'Elle sera envoyée à ' + esc(nomDe(S.me.n1_id)) + ' pour validation.' : 'Elle sera transmise directement au responsable achats.';
+    return `<div><h1>Demande d'achat</h1><p class="mut" style="margin:0">Pour une prestation ou un achat hors catalogue. ${dest}</p></div>
+    <form class="card pad stack" data-form="prestation" style="max-width:860px">
+      <datalist id="dl-four">${four}</datalist><datalist id="dl-lieux">${lieux}</datalist>
+      <h2>Fournisseur</h2>
+      <div class="two">
+        <label>Fournisseur<input name="fournisseur" required list="dl-four" placeholder="Ex. SGS"></label>
+        <label>Email du contact<input name="contact_email" type="email"></label>
+        <label>Nom du contact<input name="contact_nom"></label>
+        <label>Prénom du contact<input name="contact_prenom"></label>
+      </div>
+      <h2 style="margin-top:8px">Prestation</h2>
+      <div class="two">
+        <label>Nom du consultant<input name="consultant"></label>
+        <label>Mission<input name="mission" required placeholder="Ex. Agent qualité"></label>
+        <label>Date de démarrage<input name="date_debut" type="date" required data-calc></label>
+        <label>Date de fin<input name="date_fin" type="date" required data-calc></label>
+        <label>Nombre de jours<input name="jours" type="number" min="1" required data-calc data-jours></label>
+        <label>TJ HT (€)<input name="tj" inputmode="decimal" required data-calc placeholder="0,00"></label>
+      </div>
+      <div class="row big"><span>Montant total HT</span><b id="presta-total">0,00 €</b></div>
+      <p class="mut" style="margin:0;font-size:13px">Le nombre de jours est calculé automatiquement (jours ouvrés, hors jours fériés). Tu peux le corriger.</p>
+      <h2 style="margin-top:8px">Imputation</h2>
+      <div class="two">
+        <label>Imputation (N° affaire)<input name="affaire" placeholder="Ex. 0507-PI-27"></label>
+        <label>Localisation<input name="localisation" list="dl-lieux" value="${esc(S.me.agence || '')}"></label>
+        <label>Rubrique achat<input name="rubrique" value="SST-Sous traitance sur affaires"></label>
+      </div>
+      <label>Commentaires<textarea name="commentaire" rows="3" placeholder="Ex. Nouvelle affaire"></textarea></label>
+      <button class="btn primary" type="submit" style="align-self:flex-start">Envoyer la demande</button>
+    </form>`;
   },
 
   admin() {
@@ -249,7 +287,7 @@ const ADMIN = {
       <label>Nom<input name="nom" required value="${esc(u && u.nom)}" placeholder="Prénom Nom"></label>
       <label>Email<input name="email" type="email" ${u ? 'disabled' : 'required'} value="${esc(u && u.email)}" placeholder="prenom.nom@societe.fr"></label>
       ${!u && !C.MAILS ? '<label>Mot de passe provisoire (à donner à la personne)<input name="password" required minlength="8" placeholder="8 caractères minimum"></label>' : ''}
-      <label>Rôle<select name="role">${opts([['technicien', 'Technicien (demandeur)'], ['n1', 'N+1 (valideur)'], ['admin', 'Admin / resp. logistique']], u ? u.role : 'technicien')}</select></label>
+      <label>Rôle<select name="role">${opts([['technicien', 'Technicien (demandeur)'], ['n1', 'N+1 (valideur)'], ['assistance', 'Assistance technique'], ['admin', 'Admin / resp. logistique']], u ? u.role : 'technicien')}</select></label>
       <label>Agence<select name="agence">${opts(C.AGENCES, u && u.agence)}</select></label>
       <label>N+1 qui valide ses demandes<select name="n1_id"><option value="">— Aucun —</option>${opts(valideurs, u && u.n1_id)}</select></label>
       <button class="btn primary" type="submit">${u ? 'Enregistrer' : (C.MAILS ? 'Créer le compte et envoyer l’invitation' : 'Créer le compte')}</button>
@@ -301,21 +339,31 @@ const ADMIN = {
 function openDoc(id) {
   const d = S.demandes.find((x) => x.id === id);
   if (!d) return;
-  const visa = d.statut === 'validee' || d.statut === 'everwin'
+  const ok = d.statut === 'validee' || d.statut === 'everwin';
+  const visa = ok && d.n1_id
     ? `<span class="sig">${esc(nomDe(d.n1_id))}</span><span>${dfr(d.valide_le)}</span>`
-    : `<span class="mut" style="font-style:italic">${d.statut === 'refusee' ? 'Refusée' : 'En attente de validation'}</span>`;
+    : `<span class="mut" style="font-style:italic">${ok ? '' : d.statut === 'refusee' ? 'Refusée' : 'En attente de validation'}</span>`;
+  const x = d.details || {};
+  const contact = [x.contact_prenom, x.contact_nom].filter(Boolean).join(' ') + (x.contact_email ? ' (' + x.contact_email + ')' : '');
+  const infos = d.type === 'prestation' ? [
+    x.consultant && 'Consultant : ' + x.consultant,
+    contact.trim() && 'Contact fournisseur : ' + contact.trim(),
+    x.date_debut && 'Période : du ' + dfr(x.date_debut) + ' au ' + dfr(x.date_fin) + ' (' + x.jours + ' jours)'
+  ].filter(Boolean) : [];
+  const vides = Math.max(0, 4 - d.lignes.length);
   $('#modal').innerHTML = `<div class="mbox" role="dialog" aria-modal="true" aria-label="Demande d'achat">
     <div class="mbar"><b>Demande d'achat ${esc(daNum(d.id))}</b><div style="display:flex;gap:8px"><button class="btn primary" data-a="print">Télécharger en PDF</button><button class="btn" data-a="close">Fermer</button></div></div>
     <div class="mbody"><div class="da">
-      <div class="t"><div class="t1"><span>DEMANDE D'ACHAT</span><span>DA N° : ${esc(daNum(d.id))}</span></div><div class="t2"><img src="${C.LOGO}" alt="${esc(C.NOM_SOCIETE)}" onerror="this.remove()"></div></div>
+      <div class="t"><div class="t1"><span>DEMANDE D'APPROVISIONNEMENT</span><span>DA N° : ${esc(daNum(d.id))}</span></div><div class="t2"><img src="${C.LOGO}" alt="${esc(C.NOM_SOCIETE)}" onerror="this.remove()"></div></div>
       <div class="band">GÉNÉRALITÉS :</div>
-      <div class="gen"><div><b>Demandeur : </b>${esc(nomDe(d.demandeur_id))}</div><div><b>Fournisseur : </b>${esc(fournDe(d.fournisseur_id))}</div><div><b>Date : </b>${dfr(d.created_at)}</div>
-        <div><b>Agence : </b>${esc(d.agence)}</div><div style="grid-column:span 2"><b>Statut : </b>${STATUT[d.statut][0]}</div></div>
+      <div class="gen"><div><b>Demandeur : </b>${esc(nomDe(d.demandeur_id))}</div><div><b>Fournisseur : </b>${esc(fournD(d))}</div><div><b>Date : </b>${dfr(d.created_at)}</div>
+        <div><b>N° affaire : </b>${esc(d.n_affaire || '')}</div><div><b>Devis N° : </b></div><div><b>EIPS : </b>NON</div></div>
       <div class="band">ARTICLES :</div>
-      <table><thead><tr><th style="text-align:left">Désignation</th><th style="width:70px">Qté</th><th style="width:110px">PU HT</th><th style="width:120px">PT HT</th></tr></thead><tbody>
-        ${d.lignes.map((l) => `<tr><td>${esc(l.designation)}</td><td class="c">${l.qte}</td><td class="r">${eur(l.pu)}</td><td class="r g">${eur(l.qte * l.pu)}</td></tr>`).join('')}
-        <tr><td colspan="3" class="r"><b>MONTANT TOTAL :</b></td><td class="r g"><b>${eur(totalDA(d))}</b></td></tr></tbody></table>
-      <div class="foot"><div><b>Commentaires :</b><span>${esc(d.commentaire || '')}</span></div>
+      <table><thead><tr><th style="text-align:left">Libellé</th><th>Qté</th><th>PU HT (av. remise)</th><th>Remise</th><th>PT HT</th><th>Rubrique achat</th><th>Date livraison</th><th>Lieu de livraison</th><th>Observation</th></tr></thead><tbody>
+        ${d.lignes.map((l) => `<tr><td>${esc(l.designation)}</td><td class="c">${l.qte}</td><td class="r">${eur(l.pu)}</td><td></td><td class="r g">${eur(l.qte * l.pu)}</td><td>${esc(l.rubrique || '')}</td><td class="c">${dfr(l.date_livraison)}</td><td>${esc(l.lieu || d.agence || '')}</td><td></td></tr>`).join('')}
+        ${'<tr><td>&nbsp;</td><td></td><td></td><td></td><td class="r g">0,00 €</td><td></td><td></td><td></td><td></td></tr>'.repeat(vides)}
+        <tr><td colspan="4" class="r"><b>MONTANT TOTAL :</b></td><td class="r g"><b>${eur(totalDA(d))}</b></td><td colspan="4"></td></tr></tbody></table>
+      <div class="foot"><div><b>Commentaires :</b><span style="white-space:pre-line">${esc([d.commentaire, ...infos].filter(Boolean).join('\n'))}</span></div>
         <div><b>Visa et date demandeur :</b><span class="sig">${esc(nomDe(d.demandeur_id))}</span><span>${dfr(d.created_at)}</span></div>
         <div><b>Visa et date responsable :</b>${visa}</div></div>
     </div></div></div>`;
@@ -420,6 +468,18 @@ const FORMS = {
     toast(S.edit ? 'Produit modifié.' : 'Produit ajouté au catalogue.');
     S.edit = null; await loadAll(); render();
   },
+  async prestation(fd) {
+    const p = Object.fromEntries(fd.entries());
+    p.tj = parseFloat(String(p.tj).replace(',', '.'));
+    p.jours = parseInt(p.jours, 10);
+    if (isNaN(p.tj)) throw new Error('TJ invalide.');
+    if (p.date_fin < p.date_debut) throw new Error('La date de fin est avant la date de démarrage.');
+    const { data: id, error } = await sb.rpc('creer_prestation', { p });
+    if (error) throw error;
+    notifier({ type: 'soumise', ids: [id] });
+    await loadAll(); S.screen = 'demandes'; render();
+    toast('Demande ' + daNum(id) + (S.me.n1_id ? ' envoyée à ton N+1.' : ' transmise au responsable achats.'));
+  },
   async fournisseur(fd) {
     const row = { nom: fd.get('nom').trim(), email: fd.get('email').trim() || null, tel: fd.get('tel').trim() || null };
     const { error } = S.edit ? await sb.from('fournisseurs').update(row).eq('id', S.edit) : await sb.from('fournisseurs').insert(row);
@@ -445,6 +505,38 @@ document.addEventListener('submit', async (e) => {
   if (b) b.disabled = true;
   try { await FORMS[f.dataset.form](new FormData(f)); } catch (err) { fail(err); } finally { if (b && b.isConnected) b.disabled = false; }
 });
+function joursOuvres(a, b) {
+  const d0 = new Date(a + 'T12:00:00'), d1 = new Date(b + 'T12:00:00');
+  if (isNaN(d0) || isNaN(d1) || d1 < d0) return 0;
+  const f = new Set();
+  for (let y = d0.getFullYear(); y <= d1.getFullYear(); y++) {
+    ['01-01', '05-01', '05-08', '07-14', '08-15', '11-01', '11-11', '12-25'].forEach((md) => f.add(y + '-' + md));
+    const g = y % 19, c = Math.floor(y / 100), h = (c - Math.floor(c / 4) - Math.floor((8 * c + 13) / 25) + 19 * g + 15) % 30;
+    const i = h - Math.floor(h / 28) * (1 - Math.floor(29 / (h + 1)) * Math.floor((21 - g) / 11));
+    const j = (y + Math.floor(y / 4) + i + 2 - c + Math.floor(c / 4)) % 7;
+    const l = i - j, m = 3 + Math.floor((l + 40) / 44), dd = l + 28 - 31 * Math.floor(m / 4);
+    const paques = new Date(y, m - 1, dd, 12);
+    [1, 39, 50].forEach((n) => { const x = new Date(paques); x.setDate(x.getDate() + n); f.add(x.toISOString().slice(0, 10)); });
+  }
+  let n = 0;
+  for (const x = new Date(d0); x <= d1; x.setDate(x.getDate() + 1)) {
+    const w = x.getDay();
+    if (w !== 0 && w !== 6 && !f.has(x.toISOString().slice(0, 10))) n++;
+  }
+  return n;
+}
+function majPrestation(e) {
+  const f = e.target.closest('form[data-form=prestation]');
+  if (!f) return;
+  if (e.target.name === 'date_debut' || e.target.name === 'date_fin') {
+    const n = joursOuvres(f.date_debut.value, f.date_fin.value);
+    if (n) f.jours.value = n;
+  }
+  const tj = parseFloat(String(f.tj.value).replace(',', '.')) || 0;
+  $('#presta-total').textContent = eur(tj * (parseInt(f.jours.value, 10) || 0));
+}
+document.addEventListener('change', majPrestation);
+document.addEventListener('input', majPrestation);
 document.addEventListener('input', (e) => {
   if (e.target.id === 'q') { S.search = e.target.value; $('#grid').innerHTML = gridHtml(); }
 });
