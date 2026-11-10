@@ -121,8 +121,9 @@ function render() {
   }).join('');
   $('#app').innerHTML = `<header class="top">
       <div class="brand"><img src="${C.LOGO_BLANC}" alt="${esc(C.NOM_SOCIETE)}" style="height:34px;display:block"></div>
-      <nav aria-label="Navigation">${nav}</nav>
+      <input type="search" id="q" class="topsearch" placeholder="Rechercher un article, une référence, un fournisseur…" value="${esc(S.search)}" aria-label="Rechercher dans le catalogue">
       <div class="who">${esc(S.me.nom)} <span>· ${ROLE[S.me.role]}</span><button class="link light" data-a="logout">Déconnexion</button></div>
+      <nav aria-label="Navigation">${nav}</nav>
     </header><main class="wrap">${VIEWS[S.screen]()}</main>`;
 }
 
@@ -132,7 +133,7 @@ const VIEWS = {
     const cats = ['Tout', ...C.CATEGORIES.filter((c) => actifs.some((p) => p.categorie === c))];
     return `<div class="cols">
       <aside class="side"><h2 class="lbl" style="margin-bottom:8px">Catégories</h2>${cats.map((c) => `<button class="catb ${S.cat === c ? 'on' : ''}" data-a="cat" data-k="${esc(c)}"><span>${esc(c)}</span><span>${c === 'Tout' ? actifs.length : actifs.filter((p) => p.categorie === c).length}</span></button>`).join('')}</aside>
-      <section class="grow"><div class="bar"><h1>${S.cat === 'Tout' ? 'Catalogue' : esc(S.cat)}</h1><input type="search" id="q" placeholder="Article, référence, fournisseur…" value="${esc(S.search)}" aria-label="Rechercher"></div>
+      <section class="grow"><div class="bar"><h1>${S.cat === 'Tout' ? 'Catalogue' : esc(S.cat)}</h1></div>
       <div id="grid" class="grid">${gridHtml()}</div></section></div>`;
   },
 
@@ -565,7 +566,13 @@ function majPrestation(e) {
 document.addEventListener('change', majPrestation);
 document.addEventListener('input', majPrestation);
 document.addEventListener('input', (e) => {
-  if (e.target.id === 'q') { S.search = e.target.value; $('#grid').innerHTML = gridHtml(); }
+  if (e.target.id === 'q') {
+    S.search = e.target.value;
+    if (S.screen !== 'catalogue') {
+      S.screen = 'catalogue'; S.edit = null; render();
+      const q = $('#q'); q.focus(); q.setSelectionRange(q.value.length, q.value.length);
+    } else $('#grid').innerHTML = gridHtml();
+  }
 });
 document.addEventListener('change', (e) => {
   if (e.target.dataset.on === 'taille') { S.tailles[e.target.dataset.id] = e.target.value; $('#grid').innerHTML = gridHtml(); }
